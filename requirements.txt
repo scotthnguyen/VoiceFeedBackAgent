@@ -1,0 +1,18 @@
+# --- Voice agent (LiveKit) ---
+livekit-agents>=1.0.0
+livekit-plugins-groq>=1.0.0        # Groq STT (Whisper), LLM (Llama), and TTS (PlayAI) — one key
+livekit-plugins-silero>=1.0.0      # voice-activity detection / turn taking
+
+# --- Post-call summarization ---
+groq>=0.11.0
+
+# --- Google Sheets sink (via Apps Script web app; just an HTTP POST) ---
+requests>=2.31.0
+
+# --- Web client token endpoint ---
+flask>=3.0.0
+flask-cors>=4.0.0
+
+# --- QR + utils ---
+qrcode[pil]>=7.4.0
+python-dotenv>=1.0.0

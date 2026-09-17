@@ -1,0 +1,18 @@
+# secrets
+.env
+service-account.json
+*.credentials.json
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# generated artifacts
+scripts/*.png
+web/qr.png
+
+# os
+.DS_Store

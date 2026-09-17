@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Drive-Thru Feedback</title>
+  <script src="https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0b0d11; color: #e8eaed;
+    }
+    .view { display: none; min-height: 100dvh; }
+    .view.active { display: flex; }
+
+    /* ---------- Poster / drive-thru sign ---------- */
+    #poster {
+      flex-direction: column; align-items: center; justify-content: center;
+      gap: 1.4rem; padding: 2rem 1.5rem; text-align: center;
+      background: radial-gradient(circle at 50% 0%, #1c2029, #0b0d11 70%);
+    }
+    #poster h1 { font-size: 1.5rem; margin: 0; font-weight: 700; }
+    #poster .sub { margin: 0; opacity: .6; max-width: 20rem; font-size: .95rem; }
+    .sign {
+      background: #fff; color: #16181d; border-radius: 24px; padding: 1.6rem 1.5rem 1.4rem;
+      width: 100%; max-width: 20rem; box-shadow: 0 12px 40px rgba(0,0,0,.45);
+      display: flex; flex-direction: column; align-items: center; gap: 1rem;
+      cursor: pointer; transition: transform .12s ease;
+    }
+    .sign:active { transform: scale(.98); }
+    .store-tag { font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; color: #d62828; font-weight: 700; }
+    .store-num { font-size: 2.4rem; font-weight: 800; line-height: 1; }
+    .store-meta { font-size: .95rem; opacity: .65; margin-top: -.35rem; }
+    .qr { width: 190px; height: 190px; border-radius: 12px; display: block; }
+    .sign .cta { font-size: .9rem; font-weight: 600; color: #d62828; }
+
+    /* ---------- Phone call screen ---------- */
+    #call {
+      position: relative;
+      flex-direction: column; align-items: center; justify-content: space-between;
+      padding: 3.2rem 1.5rem 2.6rem;
+      background: linear-gradient(180deg, #1b2733 0%, #0b0d11 65%);
+    }
+    .call-store {
+      position: absolute; top: 1rem; right: 1rem;
+      background: rgba(255,255,255,.1); border-radius: 999px;
+      padding: .4rem .8rem; font-size: .85rem; font-weight: 600; letter-spacing: .02em;
+    }
+    .call-store .lbl { opacity: .6; font-weight: 500; margin-right: .3rem; }
+    .call-top { display: flex; flex-direction: column; align-items: center; gap: .5rem; margin-top: 1rem; }
+    .avatar {
+      width: 108px; height: 108px; border-radius: 50%; margin-bottom: .8rem;
+      background: #dcecf7 url("/logo.jpg") center/cover no-repeat;
+      box-shadow: 0 0 0 0 rgba(120,180,215,.4); transition: box-shadow .2s ease, transform .2s ease;
+    }
+    .avatar.speaking { box-shadow: 0 0 0 16px rgba(120,180,215,.22); transform: scale(1.05); }
+    .contact { font-size: 1.7rem; font-weight: 600; margin: 0; }
+    .callstatus { font-size: 1rem; opacity: .7; min-height: 1.3rem; }
+
+    .captions {
+      width: 100%; max-width: 24rem; flex: 1; margin: 1.4rem 0; overflow-y: auto;
+      display: flex; flex-direction: column; gap: .55rem; padding: 0 .2rem;
+      -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 22px);
+              mask-image: linear-gradient(180deg, transparent 0, #000 22px);
+    }
+    .bubble { padding: .6rem .85rem; border-radius: 16px; font-size: .92rem; line-height: 1.35; max-width: 85%; }
+    .bubble.agent { background: #262b34; align-self: flex-start; border-bottom-left-radius: 5px; }
+    .bubble.you { background: #d62828; color: #fff; align-self: flex-end; border-bottom-right-radius: 5px; }
+
+    .controls { display: flex; gap: 2.4rem; align-items: center; justify-content: center; }
+    .ctl { display: flex; flex-direction: column; align-items: center; gap: .4rem; font-size: .72rem; opacity: .85; }
+    .ctl button {
+      width: 66px; height: 66px; border-radius: 50%; border: none; cursor: pointer;
+      font-size: 1.5rem; color: #fff; background: rgba(255,255,255,.14);
+      display: flex; align-items: center; justify-content: center; transition: transform .08s, background .2s;
+    }
+    .ctl button:active { transform: scale(.94); }
+    .ctl button.muted { background: #fff; color: #16181d; }
+    .ctl button.end { background: #e5484d; transform: rotate(135deg); }
+    .ctl button.end:active { transform: rotate(135deg) scale(.94); }
+  </style>
+</head>
+<body>
+  <!-- Drive-thru sign / QR poster -->
+  <section id="poster" class="view active">
+    <h1>Rate your drive-thru</h1>
+    <p class="sub">Scan or tap the code to start a quick feedback call about the automated ordering.</p>
+    <div class="sign" id="sign">
+      <div class="store-tag">Store</div>
+      <div class="store-num" id="posterNum">#—</div>
+      <img class="qr" id="qr" src="/qr.png" alt="Scan to give feedback" />
+      <div class="cta">Tap to call →</div>
+    </div>
+  </section>
+
+  <!-- iOS-style call screen -->
+  <section id="call" class="view">
+    <div class="call-store"><span class="lbl">Store</span><span id="callStoreNum">#—</span></div>
+    <div class="call-top">
+      <div class="avatar" id="avatar"></div>
+      <p class="contact" id="contact">Presto</p>
+      <div class="callstatus" id="callstatus">Calling…</div>
+    </div>
+
+    <div class="captions" id="captions"></div>
+
+    <div class="controls">
+      <div class="ctl">
+        <button id="mute" title="Mute">🎙️</button>
+        <span id="muteLabel">Mute</span>
+      </div>
+      <div class="ctl">
+        <button class="end" id="hangup" title="End call">📞</button>
+        <span>End</span>
+      </div>
+    </div>
+  </section>
+
+  <audio id="agentAudio" autoplay></audio>
+
+  <script>
+    const LK = window.LivekitClient;
+    const $ = (id) => document.getElementById(id);
+    const els = {
+      poster: $("poster"), call: $("call"), sign: $("sign"),
+      posterNum: $("posterNum"), callStoreNum: $("callStoreNum"), qr: $("qr"),
+      avatar: $("avatar"), callstatus: $("callstatus"),
+      captions: $("captions"), mute: $("mute"), muteLabel: $("muteLabel"),
+      hangup: $("hangup"), audio: $("agentAudio"),
+    };
+
+    let room = null;
+    let store = null;
+    let timerId = null;
+    let connected = false;
+
+    // ---- Pick a real, random store for this "sticker" ----
+    async function pickStore() {
+      try {
+        const res = await fetch("/stores");
+        const list = await res.json();
+        store = list[Math.floor(Math.random() * list.length)];
+      } catch (e) {
+        store = { store_id: "101", brand: "Carl's Jr.", city: "Anaheim", state: "CA" };
+      }
+      els.posterNum.textContent = "#" + store.store_id;
+      els.callStoreNum.textContent = "#" + store.store_id;
+    }
+
+    function showView(name) {
+      els.poster.classList.toggle("active", name === "poster");
+      els.call.classList.toggle("active", name === "call");
+    }
+
+    function addBubble(who, text) {
+      const div = document.createElement("div");
+      div.className = "bubble " + (who === "You" ? "you" : "agent");
+      div.textContent = text;
+      els.captions.appendChild(div);
+      els.captions.scrollTop = els.captions.scrollHeight;
+    }
+
+    function startTimer() {
+      const t0 = Date.now();
+      timerId = setInterval(() => {
+        const s = Math.floor((Date.now() - t0) / 1000);
+        const mm = String(Math.floor(s / 60)).padStart(2, "0");
+        const ss = String(s % 60).padStart(2, "0");
+        els.callstatus.textContent = mm + ":" + ss;
+      }, 500);
+    }
+
+    async function startCall() {
+      showView("call");
+      els.callstatus.textContent = "Calling…";
+      els.captions.innerHTML = "";
+      try {
+        const res = await fetch("/token");
+        if (!res.ok) throw new Error("token request failed");
+        const { url, token } = await res.json();
+
+        room = new LK.Room({ adaptiveStream: true });
+        room.on(LK.RoomEvent.TrackSubscribed, (track) => {
+          if (track.kind === LK.Track.Kind.Audio) track.attach(els.audio);
+        });
+        room.on(LK.RoomEvent.ActiveSpeakersChanged, (speakers) => {
+          const agentTalking = speakers.some((s) => s.identity !== room.localParticipant.identity);
+          els.avatar.classList.toggle("speaking", agentTalking);
+        });
+        room.on(LK.RoomEvent.TranscriptionReceived, (segments, participant) => {
+          const you = participant && participant.identity === room.localParticipant.identity;
+          for (const seg of segments) {
+            if (seg.final && seg.text.trim()) addBubble(you ? "You" : "Agent", seg.text.trim());
+          }
+        });
+        room.on(LK.RoomEvent.Disconnected, () => endCall(true));
+
+        await room.connect(url, token);
+        await room.localParticipant.setMicrophoneEnabled(true);
+        connected = true;
+        startTimer();
+      } catch (err) {
+        console.error(err);
+        els.callstatus.textContent = "Couldn't connect — tap End and try again.";
+      }
+    }
+
+    async function endCall(remote) {
+      if (timerId) { clearInterval(timerId); timerId = null; }
+      els.avatar.classList.remove("speaking");
+      if (connected) els.callstatus.textContent = "Call ended";
+      connected = false;
+      try { if (room && !remote) await room.disconnect(); } catch (e) {}
+      room = null;
+      // Back to the sign with a fresh random store after a beat.
+      setTimeout(async () => { await pickStore(); showView("poster"); }, remote ? 1600 : 200);
+    }
+
+    async function toggleMute() {
+      if (!room) return;
+      const enabled = room.localParticipant.isMicrophoneEnabled;
+      await room.localParticipant.setMicrophoneEnabled(!enabled);
+      const muted = enabled; // was enabled, now muted
+      els.mute.classList.toggle("muted", muted);
+      els.mute.textContent = muted ? "🔇" : "🎙️";
+      els.muteLabel.textContent = muted ? "Unmute" : "Mute";
+    }
+
+    els.sign.addEventListener("click", startCall);
+    els.hangup.addEventListener("click", () => endCall(false));
+    els.mute.addEventListener("click", toggleMute);
+
+    pickStore();
+  </script>
+</body>
+</html>

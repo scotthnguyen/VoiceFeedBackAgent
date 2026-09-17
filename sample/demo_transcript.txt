@@ -1,0 +1,35 @@
+Sample run — demo fallback
+===========================
+Use this if live wifi / mic misbehaves during the interview. Read the agent lines
+aloud (or play a screen recording) and show the matching row appear in the Sheet by
+running:  python -m agent.sheets   (appends a fake "misheard-order" row)
+
+--- LOW-RATING CALL (feedback collected) ---
+Agent:    Hi! Thanks for stopping by. Please say the store number.
+Customer: Three oh three.
+Agent:    Store 303, Fazoli's in Lexington — is that right?
+Customer: Yep.
+Agent:    Great. How would you rate your experience from 1 to 10?
+Customer: Like a four.
+Agent:    Sorry to hear that — what could we have done better?
+Customer: The AI kept mishearing me and added breadsticks I didn't order, and I had
+          to repeat my drink three times.
+Agent:    Got it, thank you for the honest feedback. Have a great day!
+
+  -> Row logged:
+     store_id=303  brand=Fazoli's  region=Southeast  rating=4
+     summary="Order was misheard; unwanted breadsticks added and drink repeated."
+     issue_tag=misheard-order   sentiment=negative
+
+--- HAPPY CALL (no feedback prompt) ---
+Agent:    Hi! Please say the store number.
+Customer: One oh one.
+Agent:    Store 101, Carl's Jr. in Anaheim — correct?
+Customer: Correct.
+Agent:    How would you rate your experience from 1 to 10?
+Customer: Nine.
+Agent:    Awesome, thanks so much! Take care.
+
+  -> Row logged:
+     store_id=101  brand=Carl's Jr.  region=West  rating=9
+     (feedback / summary / issue_tag / sentiment left blank by design)

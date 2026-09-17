@@ -1,0 +1,7 @@
+store_id,brand,name,city,state,region,timezone
+101,Carl's Jr.,Carl's Jr. - Anaheim,Anaheim,CA,West,America/Los_Angeles
+202,Hardee's,Hardee's - St. Louis,St. Louis,MO,Midwest,America/Chicago
+303,Fazoli's,Fazoli's - Lexington,Lexington,KY,Southeast,America/New_York
+404,Taco John's,Taco John's - Cheyenne,Cheyenne,WY,Mountain,America/Denver
+505,Wienerschnitzel,Wienerschnitzel - San Diego,San Diego,CA,West,America/Los_Angeles
+606,Captain D's,Captain D's - Nashville,Nashville,TN,South,America/Chicago
